@@ -6,6 +6,8 @@ import com.attia12.ecomerce.kafka.OrderConfirmation;
 import com.attia12.ecomerce.kafka.OrderProducer;
 import com.attia12.ecomerce.orderline.OrderLineRequest;
 import com.attia12.ecomerce.orderline.OrderLineService;
+import com.attia12.ecomerce.payment.PaymentClient;
+import com.attia12.ecomerce.payment.PaymentRequest;
 import com.attia12.ecomerce.product.ProductClient;
 import com.attia12.ecomerce.product.PurchaseRequest;
 import jakarta.persistence.EntityNotFoundException;
@@ -25,6 +27,7 @@ public class OrderService {
     private final OrderMapper mapper;
     private final OrderLineService orderLineService;
     private final OrderProducer orderProducer;
+    private final PaymentClient paymentClient;
     public Integer createOrder(OrderRequest request) {
         //check the customer -> openFeign
         var customer=customerClient.findCustomerById(request.customerId())
@@ -43,6 +46,15 @@ public class OrderService {
 
         }
         // start payement process
+        var payementRequest=new PaymentRequest(
+                request.amount(),
+                request.paymentMethod(),
+                order.getId(),
+                order.getReference(),
+                customer
+
+        );
+        paymentClient.requestOrderPayment(payementRequest);
         // send the order confirmation to our notification microservice (kafka)
         orderProducer.sendOrderConfirmation(new OrderConfirmation(
                 request.reference(),request.amount(),request.paymentMethod(),customer,purchasedProducts
