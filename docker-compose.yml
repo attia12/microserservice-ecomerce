@@ -31,13 +31,14 @@ services:
       - microservices-net
     restart: unless-stopped
 
-  mongodb:
-    container_name: ms_mongo_db
+  mongo:
+    container_name: mongo
+
     image: mongo
     ports:
       - 27017:27017
-    volumes:
-      - mongo:/data
+
+    restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: attia
       MONGO_INITDB_ROOT_PASSWORD: attia
@@ -45,19 +46,25 @@ services:
       - microservices-net
 
   mongo-express:
-    container_name: ms_mongo_express
+    container_name: mongo-express
     image: mongo-express
-    restart: unless-stopped
+    restart: always
     ports:
       - 8081:8081
     environment:
+
       ME_CONFIG_MONGODB_ADMINUSERNAME: attia
-      ME_CONFIG_MONGODB_ADMINPASSWORD: attia
-      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_AUTH_PASSWORD: attia
+      ME_CONFIG_MONGODB_URL: mongodb://attia:attia@mongo:27017/
+      ME_CONFIG_BASICAUTH: false
+
+
     networks:
       - microservices-net
     depends_on:
-      - mongodb
+      - mongo
+
+
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -94,6 +101,14 @@ services:
       - 1025:1025
     networks:
       - microservices-net
+  zipkin:
+    container_name: zipkin
+    image: openzipkin/zipkin
+    ports:
+      - 9411:9411
+    networks:
+      - microservices-net
+
 
 networks:
   microservices-net:
@@ -102,4 +117,4 @@ networks:
 volumes:
   postgres:
   pgadmin:
-  mongo:
+
